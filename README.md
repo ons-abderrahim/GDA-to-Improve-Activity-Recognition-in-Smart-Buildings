@@ -6,7 +6,7 @@ This repository provides **clean 1‑D adaptations** of three widely used genera
 - Distribution‑Free Domain Generalization (DFDG)
 - Tilted Empirical Risk Minimization (TERM)
 
-All three run on the **same 1‑D backbone** (Conv1D + BiGRU) and expect data shaped `[N, T, C]` (N samples, T timesteps, C channels). Scripts report **Accuracy** and **Macro‑F1** each epoch.
+All three run on the **same 1‑D backbone** (Conv1D + BiGRU) and expect data shaped `[N, T, C]` (N samples, T timesteps, C channels). Scripts report **Accuracy** and **F1-score** each epoch.
 
 ---
 
@@ -53,7 +53,7 @@ gda_1d/
 ├── common/
 │   ├── data.py          # NPZ loader → PyTorch DataLoader (returns [C, T] tensors)
 │   ├── model_1d.py      # Conv1D + BiGRU backbone + MLP classifier
-│   └── utils.py         # seeding + Accuracy/Macro‑F1 helpers
+│   └── utils.py         # seeding + Accuracy/F1-score helpers
 ├── methods/
 │   ├── erm_train.py     # plain ERM baseline (recommended sanity check)
 │   ├── swa_train.py     # SWA with dense averaging after --swa_start
@@ -195,7 +195,7 @@ python methods/term_train.py --train train.npz --val val.npz --classes 5 --tilt 
 
 ## Training and evaluation
 
-Each script prints **Accuracy** and **Macro‑F1** on the validation set after every epoch. Models are saved as `*_model.pt` in the working directory.
+Each script prints **Accuracy** and **F1-score** on the validation set after every epoch. Models are saved as `*_model.pt` in the working directory.
 
 Simple evaluation snippet (example for TERM checkpoint):
 
@@ -218,7 +218,7 @@ with torch.no_grad():
         all_logits.append(logits); all_y.append(y)
 logits = torch.cat(all_logits); y = torch.cat(all_y)
 acc,f1 = metrics_from_logits(logits, y)
-print(f"Val acc={acc:.4f}  macro‑F1={f1:.4f}")
+print(f"Val acc={acc:.4f}  F1-score={f1:.4f}")
 ```
 
 ---
@@ -237,7 +237,7 @@ print(f"Val acc={acc:.4f}  macro‑F1={f1:.4f}")
 ## Reproducibility
 
 - Fixed seeds in all scripts
-- Deterministic metrics (Accuracy, Macro‑F1)
+- Deterministic metrics (Accuracy, F1)
 - Consistent backbone across methods
 
 If you change the backbone, keep the **feature dimension** stable (or update the classifier accordingly).
@@ -249,7 +249,7 @@ If you change the backbone, keep the **feature dimension** stable (or update the
 - Shapes: tensors must be `[B, C, T]` inside the model; the DataLoader returns `[C, T]` per sample.
 - Scaling: per‑channel standardization is critical for smooth optimization.
 - BN stats with SWA: ensure the BN refresh step runs before validation (script handles this).
-- Imbalance: prefer Macro‑F1; increase TERM `--tilt` moderately; consider class‑balanced sampling upstream.
+- Imbalance: prefer F1-score; increase TERM `--tilt` moderately; consider class‑balanced sampling upstream.
 - OOM: reduce batch size or GRU hidden size in `model_1d.py`.
 
 ---
