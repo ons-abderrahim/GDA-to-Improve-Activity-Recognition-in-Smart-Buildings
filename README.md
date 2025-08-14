@@ -1,7 +1,8 @@
 
 # GDA‑1D: Domain Generalization for 1‑D Activity Recognition (SWA/SWAD, DFDG, TERM)
 
-This repository provides **clean 1‑D adaptations** of three widely used generalization methods for *multivariate sensor time‑series* (smart‑building activity recognition, wearables, IoT):
+This repository provides the codes for the Scalable Activity Recognition in Smart Buildings via Generalized
+Domain Adaptation of IoT Sensor Data paper:
 - SWA (SWAD‑style dense averaging near convergence)
 - Distribution‑Free Domain Generalization (DFDG)
 - Tilted Empirical Risk Minimization (TERM)
@@ -14,16 +15,8 @@ All three run on the **same 1‑D backbone** (Conv1D + BiGRU) and expect data sh
 
 ```bash
 # 1) Install
-pip install -r requirements.txt  # see minimal list below
 
 # 2) Prepare data
-python - << 'PY'
-import numpy as np
-# X: [N, T, C] float32   y: [N] int64
-# optional: domain: [N] int64 (not required)
-np.savez('train.npz', X=X_train, y=y_train, domain=domains_train)
-np.savez('val.npz',   X=X_val,   y=y_val,   domain=domains_val)
-PY
 
 # 3) Train one of the methods
 python methods/erm_train.py  --train train.npz --val val.npz --classes 5
@@ -75,55 +68,10 @@ scikit-learn>=1.2
 numpy>=1.24
 ```
 
-Example:
-
-```bash
-python -m venv .venv && source .venv/bin/activate  # (Windows: .venv\Scripts\activate)
-pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121  # pick your CUDA/CPU wheel
-pip install scikit-learn numpy
-```
 
 ---
 
-## Data format
-
-Provide two (or three) NPZ files:
-
-- `train.npz` with `X:[N,T,C] float32`, `y:[N] int64`, optional `domain:[N] int64`
-- `val.npz`   with the same keys
-- optionally `test.npz` for a final hold‑out
-
-Notes:
-- Standardize each channel (z‑score per sensor) before saving to NPZ.
-- Variable‑length sequences should be **padded and masked** beforehand (this repo assumes fixed‑length T).
-- DFDG **does not require domain labels**; `domain` is kept only for analysis/stratified splits if you need it.
-
-Quick CSV→NPZ sketch:
-
-```python
-import numpy as np, pandas as pd
-# df columns: time, channel_0..channel_{C-1}, label
-# build sliding windows of length T, stack to shape [N,T,C] and labels [N]
-# ... your preprocessing here ...
-np.savez('train.npz', X=X_train.astype(np.float32), y=y_train.astype(np.int64))
-```
-
----
-
-## Backbone: 1‑D Temporal Encoder
-
-The default encoder is **Conv1D → BiGRU → mean pooling → MLP**:
-
-- Conv1D layers: temporal feature extraction per channel with BN + ReLU + Dropout
-- BiGRU: captures **long‑range** bidirectional context
-- Temporal mean pooling over the sequence
-- MLP classifier to logits
-
-You can swap the encoder in `common/model_1d.py` (e.g., Temporal CNN, TST/Transformer, WaveNet) without touching the method logic.
-
----
-
-## Method 1 — SWA (SWAD‑style dense averaging)
+## Method 1 — SWAD 
 
 **What it is.** Stochastic Weight Averaging maintains a running average of weights during late training for a flatter, better‑generalizing solution. We implement **dense updates per step** after a chosen `--swa_start`, resembling the dense averaging used in SWAD.
 
@@ -169,7 +117,7 @@ python methods/dfdg_train.py --train train.npz --val val.npz --classes 5 --lambd
 
 ---
 
-## Method 3 — TERM (Tilted ERM)
+## Method 3 — ERM 
 
 **What it is.** Replaces mean loss with **tilted risk** to reweight hard/minority samples:
 
@@ -237,20 +185,11 @@ print(f"Val acc={acc:.4f}  F1-score={f1:.4f}")
 ## Reproducibility
 
 - Fixed seeds in all scripts
-- Deterministic metrics (Accuracy, F1)
-- Consistent backbone across methods
+- Deterministic metrics (Accuracy, F1-score)
 
-If you change the backbone, keep the **feature dimension** stable (or update the classifier accordingly).
 
 ---
-
-## Troubleshooting
-
-- Shapes: tensors must be `[B, C, T]` inside the model; the DataLoader returns `[C, T]` per sample.
-- Scaling: per‑channel standardization is critical for smooth optimization.
-- BN stats with SWA: ensure the BN refresh step runs before validation (script handles this).
-- Imbalance: prefer F1-score; increase TERM `--tilt` moderately; consider class‑balanced sampling upstream.
-- OOM: reduce batch size or GRU hidden size in `model_1d.py`.
-
----
-
+#Acknowledgments
+The completion of this research was made possible
+thanks to the Natural Sciences and Engineering Research
+Council of Canada (NSERC)
