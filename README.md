@@ -391,13 +391,14 @@ loaders = make_lobo_splits(X, y, domains, test_domain=0)
 If you use this code in your research, please cite:
 
 ```bibtex
-@article{abderrahim2025gda,
-  title={Scalable Activity Recognition in Smart Buildings via
-         Generalized Domain Adaptation of IoT Sensor Data},
-  journal={Journal of Building Engineering},
-  year={2025},
-  publisher={Elsevier},
-  doi={10.1016/j.jobe.2025.xxxxx}
+@article{abderrahim2026scalable,
+  title={Scalable activity recognition in smart buildings via generalized domain adaptation of IoT sensor data},
+  author={Abderrahim, Ons and Dridi, Jawher and Amayri, Manar and Bouguila, Nizar},
+  journal={Energy and Buildings},
+  volume={351},
+  pages={116692},
+  year={2026},
+  publisher={Elsevier}
 }
 ```
 
